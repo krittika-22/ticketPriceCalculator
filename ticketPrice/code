@@ -1,0 +1,160 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class TicketCalculatorApp {
+
+    static int adultPrice = 75;
+    static int childPrice = 50;
+    static int seniorPrice = 60;
+
+    public static void main(String[] args) {
+        // Main Frame
+        JFrame frame = new JFrame("🎟️ Ticket Price Calculator");
+        frame.setSize(400, 420);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+
+        // Panel with vertical layout
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        frame.add(panel);
+
+        Font labelFont = new Font("SansSerif", Font.PLAIN, 14);
+
+        JTextField adultField = new JTextField(10);
+        JTextField childField = new JTextField(10);
+        JTextField seniorField = new JTextField(10);
+
+        panel.add(createLabeledField("👨 Adult Tickets (₹75):", adultField, labelFont));
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(createLabeledField("🧒 Child Tickets (₹50):", childField, labelFont));
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(createLabeledField("👴 Senior Tickets (₹60):", seniorField, labelFont));
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        JCheckBox studentCheckBox = new JCheckBox("Are you a student?");
+        JTextField studentIdField = new JTextField(15);
+        JTextField universityField = new JTextField(15);
+
+        studentIdField.setEnabled(false);
+        universityField.setEnabled(false);
+
+        studentCheckBox.addActionListener(e -> {
+            boolean selected = studentCheckBox.isSelected();
+            studentIdField.setEnabled(selected);
+            universityField.setEnabled(selected);
+        });
+
+        panel.add(studentCheckBox);
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(createLabeledField("Student ID:", studentIdField, labelFont));
+        panel.add(Box.createRigidArea(new Dimension(0, 5)));
+        panel.add(createLabeledField("University/School Name:", universityField, labelFont));
+
+        JPanel buttonPanel = new JPanel();
+        JButton calculateButton = new JButton("Calculate");
+        JButton clearButton = new JButton("Clear");
+
+        buttonPanel.add(calculateButton);
+        buttonPanel.add(clearButton);
+        panel.add(Box.createRigidArea(new Dimension(0, 15)));
+        panel.add(buttonPanel);
+
+        frame.setVisible(true);
+
+        clearButton.addActionListener(e -> {
+            adultField.setText("");
+            childField.setText("");
+            seniorField.setText("");
+            studentCheckBox.setSelected(false);
+            studentIdField.setText("");
+            universityField.setText("");
+            studentIdField.setEnabled(false);
+            universityField.setEnabled(false);
+        });
+
+        calculateButton.addActionListener(e -> {
+            try {
+                int adults = Integer.parseInt(adultField.getText());
+                int children = Integer.parseInt(childField.getText());
+                int seniors = Integer.parseInt(seniorField.getText());
+
+                double baseTotal = adults * adultPrice + children * childPrice + seniors * seniorPrice;
+
+                boolean isStudent = studentCheckBox.isSelected();
+                String studentId = studentIdField.getText().trim();
+                String university = universityField.getText().trim();
+
+                boolean validStudent = isStudent && isValidStudentId(studentId) && !university.isEmpty();
+
+                if (isStudent && !validStudent) {
+                    JOptionPane.showMessageDialog(frame, "Please enter a valid Student ID and University/School Name to get the discount.");
+                    return;
+                }
+
+                double finalPrice = calculatePrice(baseTotal, validStudent);
+
+                showResultWindow(adults, children, seniors, baseTotal, finalPrice, validStudent, studentId, university);
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "Please enter valid numbers only.");
+            }
+        });
+    }
+
+    private static JPanel createLabeledField(String labelText, JTextField textField, Font font) {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        JLabel label = new JLabel(labelText);
+        label.setFont(font);
+        panel.add(label, BorderLayout.WEST);
+        panel.add(textField, BorderLayout.CENTER);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        return panel;
+    }
+
+    public static double calculatePrice(double basePrice, boolean isStudent) {
+        if (isStudent) {
+            return basePrice - (basePrice * 0.05);
+        }
+        return basePrice;
+    }
+
+    private static boolean isValidStudentId(String id) {
+        return !id.isEmpty() && id.matches("[a-zA-Z0-9]+");
+    }
+
+    private static void showResultWindow(int adults, int children, int seniors, double baseTotal, double finalPrice, boolean isStudent, String studentId, String university) {
+        JFrame resultFrame = new JFrame("🧾 Ticket Receipt");
+        resultFrame.setSize(400, 320);
+        resultFrame.setLocationRelativeTo(null);
+
+        JTextArea resultArea = new JTextArea();
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        resultArea.setEditable(false);
+        resultArea.setMargin(new Insets(10, 10, 10, 10));
+
+        StringBuilder receipt = new StringBuilder();
+        receipt.append("🎟️ Museum Ticket Receipt (INR)\n\n");
+        receipt.append(String.format("Adult Tickets:  %d x ₹%d = ₹%d\n", adults, adultPrice, adults * adultPrice));
+        receipt.append(String.format("Child Tickets:  %d x ₹%d = ₹%d\n", children, childPrice, children * childPrice));
+        receipt.append(String.format("Senior Tickets: %d x ₹%d = ₹%d\n", seniors, seniorPrice, seniors * seniorPrice));
+        receipt.append("----------------------------------\n");
+
+        if (isStudent) {
+            receipt.append(String.format("Subtotal:           ₹%.2f\n", baseTotal));
+            receipt.append(String.format("Student ID:         %s\n", studentId));
+            receipt.append(String.format("Institution:        %s\n", university));
+            receipt.append("Student Discount:   5%\n");
+            receipt.append("----------------------------------\n");
+        }
+
+        receipt.append(String.format("Total Price:        ₹%.2f", finalPrice));
+
+        resultArea.setText(receipt.toString());
+
+        resultFrame.add(resultArea);
+        resultFrame.setVisible(true);
+    }
+}
